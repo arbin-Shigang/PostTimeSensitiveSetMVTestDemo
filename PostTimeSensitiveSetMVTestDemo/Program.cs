@@ -149,8 +149,9 @@ namespace PostTimeSensitiveSetMVDemo
             int nPostCount = 0;
 
             var fCurrent = 0.0f;
-            var Voltage = 0.0f;
-            var fMVValue = 0.0f;
+            var fVoltage = 0.0f;
+            var fMVValue = 0.05f;
+            var fJumpStep = 0.0f;
             TimeSensitiveSetMV mv = null;
 
             int ID = nLoodIdx + 1;
@@ -161,15 +162,17 @@ namespace PostTimeSensitiveSetMVDemo
             {
                 args.Channels.Add(new TimeSensitiveSetMVArgs.TimeSensitiveSetMVChannel(nChannelIdx, new List<TimeSensitiveSetMV>()
                 {
-                    new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD1, Value = 0.0f },
-                    new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD2, Value = 0.0f },
-                    new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD3, Value = 0.0f },
+                    new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD1, Value = 1.0f },
+                    new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD2, Value = fMVValue },
+                    new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD3, Value = 0.1f },
+                    new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD4, Value = fCurrent },
+                    new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD5, Value = fVoltage },
                 }));
             }
 
             while (true)
             {
-                if (ID >= 10000)
+                if (ID >= 50000)
                 {
                     break;
                 }
@@ -194,33 +197,36 @@ namespace PostTimeSensitiveSetMVDemo
                     {
                         ID = nLoodIdx + 1;
 
+                        fMVValue = -fMVValue;
+                        fJumpStep = ((nLoodIdx / 1000 ) % 3) + 1;
+
                         for (int nChannelIdx = 0; nChannelIdx < IVCount; nChannelIdx++)
                         {
                             var chan = testData.TimeSensitiveSetMVFeed.Results.Find(item => item.GlobalIndex == nChannelIdx);
                             if (chan != null)
                             {
-                                mv = chan.MVs.Find(it => it.MVUD == TimeSensitiveSetMV.EMVUD.MVUD1);
-                                fMVValue = mv.Value + 0.00001f;
                                 fCurrent = chan.Current;
-                                Voltage = chan.Voltage;
+                                fVoltage = chan.Voltage;
 
                                 if (nChannelIdx == 0)
                                 {
-                                    stringBuilder.Append($"ChannelID:{chan.GlobalIndex + 1},");
+                                    stringBuilder.Append($"ChannelID:{chan.GlobalIndex + 1},StepID:{chan.StepIndex + 1},SubStepID:{chan.SubStepIndex + 1},");
                                     for (int nIdx = 0; nIdx < chan.MVs.Count; nIdx++)
                                     {
                                         stringBuilder.Append($"{chan.MVs[nIdx].MVUD}:{chan.MVs[nIdx].Value:f6},");
                                     }
 
-                                    stringBuilder.Append($"Current:{chan.Current:f6},Voltage:{chan.Voltage:f6},MachineStatus:{chan.MachineStatus}");
+                                    stringBuilder.Append($"Current:{fCurrent:f6},Voltage:{fVoltage:f6},MachineStatus:{chan.MachineStatus}");
                                 }
                             }
 
                             args.Channels.Add(new TimeSensitiveSetMVArgs.TimeSensitiveSetMVChannel(nChannelIdx, new List<TimeSensitiveSetMV>()
                             {
-                                new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD1, Value = fMVValue },
-                                new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD2, Value = fCurrent},
-                                new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD3, Value = Voltage },
+                                new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD1, Value = fJumpStep },
+                                new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD2, Value = fMVValue },
+                                new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD3, Value = 0.1f },
+                                new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD4, Value = fCurrent },
+                                new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD5, Value = fVoltage },
                             }));
                         }
 

@@ -155,8 +155,8 @@ namespace PostTimeSensitiveSetMVDemo
             int nHour = 0;
             int nCurrentHour = 0;
 
-            long startDateTime = 0;
-            long endDateTime = 0;
+            DateTime startDateTime;
+            DateTime endDateTime;
             float fSubTime = 0.0f;
 
             for (int nChannelIdx = 0; nChannelIdx < IVCount; nChannelIdx++)
@@ -189,7 +189,7 @@ namespace PostTimeSensitiveSetMVDemo
 
                 Thread.Sleep(1);
 
-                startDateTime = DateTime.UtcNow.Ticks;
+                startDateTime = DateTime.UtcNow;
 
                 ctrl.PostTimeSensitiveSetMV(client, args);
 
@@ -199,17 +199,18 @@ namespace PostTimeSensitiveSetMVDemo
                 {
                     if (testData.TimeSensitiveSetMVFeed != null)
                     {
-                        endDateTime = DateTime.UtcNow.Ticks;
+                        endDateTime = DateTime.UtcNow;
                         if (testData.TimeSensitiveSetMVFeed.Results.FindIndex(item => item.Result != ArbinCommandTimeSensitiveSetMVFeed.EResult.SUCCESS) >= 0)
                         {
                             testData.TimeSensitiveSetMVFeed = null;
                             break;
                         }
 
+                        nLoodIdx++;
                         ID = nLoodIdx + 1;
 
                         fMVValue = -fMVValue;
-                        fSubTime = (float)(endDateTime - startDateTime) / (float)TimeSpan.TicksPerMillisecond;
+                        fSubTime = (float)endDateTime.Subtract(startDateTime).TotalMilliseconds;
 
                         for (int nChannelIdx = 0; nChannelIdx < IVCount; nChannelIdx++)
                         {
@@ -231,7 +232,6 @@ namespace PostTimeSensitiveSetMVDemo
                         }
 
                         testData.TimeSensitiveSetMVFeed = null;
-                        nLoodIdx++;
 
                         break;
                     }

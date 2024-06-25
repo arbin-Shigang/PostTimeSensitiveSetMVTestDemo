@@ -200,10 +200,16 @@ namespace PostTimeSensitiveSetMVDemo
                     if (testData.TimeSensitiveSetMVFeed != null)
                     {
                         endDateTime = DateTime.UtcNow.Ticks;
+                        if (testData.TimeSensitiveSetMVFeed.Results.FindIndex(item => item.Result != ArbinCommandTimeSensitiveSetMVFeed.EResult.SUCCESS) >= 0)
+                        {
+                            testData.TimeSensitiveSetMVFeed = null;
+                            break;
+                        }
+
                         ID = nLoodIdx + 1;
 
                         fMVValue = -fMVValue;
-                        fSubTime = (endDateTime - startDateTime) / TimeSpan.TicksPerMillisecond;
+                        fSubTime = (float)(endDateTime - startDateTime) / (float)TimeSpan.TicksPerMillisecond;
 
                         for (int nChannelIdx = 0; nChannelIdx < IVCount; nChannelIdx++)
                         {

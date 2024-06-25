@@ -146,59 +146,64 @@ namespace PostTimeSensitiveSetMVDemo
 
             int nLoodIdx = 0;
 
-            int nPostCount = 0;
-
             var fCurrent = 0.0f;
             var fVoltage = 0.0f;
             var fMVValue = 0.05f;
-            var fJumpStep = 0.0f;
             TimeSensitiveSetMV mv = null;
 
             int ID = nLoodIdx + 1;
+            int nHour = 0;
+            int nCurrentHour = 0;
 
-            DateTime startDateTime = DateTime.Now;
+            long startDateTime = 0;
+            long endDateTime = 0;
+            float fSubTime = 0.0f;
 
             for (int nChannelIdx = 0; nChannelIdx < IVCount; nChannelIdx++)
             {
                 args.Channels.Add(new TimeSensitiveSetMVArgs.TimeSensitiveSetMVChannel(nChannelIdx, new List<TimeSensitiveSetMV>()
                 {
-                    new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD1, Value = 1.0f },
+                    new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD1, Value = 0.0f },
                     new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD2, Value = fMVValue },
-                    new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD3, Value = 0.1f },
+                    new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD3, Value = ID },
                     new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD4, Value = fCurrent },
                     new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD5, Value = fVoltage },
                 }));
             }
 
+            Console.WriteLine($"ID: {ID}");
+
             while (true)
             {
-                if (ID >= 50000)
+                if (ID >= 1036800000)
                 {
                     break;
                 }
 
-                if (nPostCount == 0)
+                nCurrentHour = ID / 720000;
+                if (nCurrentHour != nHour)
                 {
-                    Thread.Sleep(1);
-
-                    startDateTime = DateTime.Now;
+                    Console.WriteLine($"ID: {ID}");
+                    nHour = nCurrentHour;
                 }
+
+                Thread.Sleep(1);
+
+                startDateTime = DateTime.UtcNow.Ticks;
 
                 ctrl.PostTimeSensitiveSetMV(client, args);
 
-                nPostCount++;
                 args.Channels.Clear();
-
-                StringBuilder stringBuilder = new StringBuilder();
 
                 while (true)
                 {
                     if (testData.TimeSensitiveSetMVFeed != null)
                     {
+                        endDateTime = DateTime.UtcNow.Ticks;
                         ID = nLoodIdx + 1;
 
                         fMVValue = -fMVValue;
-                        fJumpStep = ((nLoodIdx / 1000 ) % 3) + 1;
+                        fSubTime = (endDateTime - startDateTime) / TimeSpan.TicksPerMillisecond;
 
                         for (int nChannelIdx = 0; nChannelIdx < IVCount; nChannelIdx++)
                         {
@@ -207,44 +212,20 @@ namespace PostTimeSensitiveSetMVDemo
                             {
                                 fCurrent = chan.Current;
                                 fVoltage = chan.Voltage;
-
-                                if (nChannelIdx == 0)
-                                {
-                                    stringBuilder.Append($"ChannelID:{chan.GlobalIndex + 1},StepID:{chan.StepIndex + 1},SubStepID:{chan.SubStepIndex + 1},");
-                                    for (int nIdx = 0; nIdx < chan.MVs.Count; nIdx++)
-                                    {
-                                        stringBuilder.Append($"{chan.MVs[nIdx].MVUD}:{chan.MVs[nIdx].Value:f6},");
-                                    }
-
-                                    stringBuilder.Append($"Current:{fCurrent:f6},Voltage:{fVoltage:f6},MachineStatus:{chan.MachineStatus}");
-                                }
                             }
 
                             args.Channels.Add(new TimeSensitiveSetMVArgs.TimeSensitiveSetMVChannel(nChannelIdx, new List<TimeSensitiveSetMV>()
                             {
-                                new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD1, Value = fJumpStep },
+                                new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD1, Value = fSubTime },
                                 new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD2, Value = fMVValue },
-                                new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD3, Value = 0.1f },
+                                new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD3, Value = ID },
                                 new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD4, Value = fCurrent },
                                 new TimeSensitiveSetMV() { MVUD = TimeSensitiveSetMV.EMVUD.MVUD5, Value = fVoltage },
                             }));
                         }
 
-                        if(nPostCount == 1)
-                        {
-                            sw.WriteLine($"{ID},{startDateTime:HH:mm:ss.fff},{stringBuilder.ToString()}");
-                        }
-                        else
-                        {
-                            sw.WriteLine($",{DateTime.Now:HH:mm:ss.fff},{stringBuilder.ToString()}");
-                            nPostCount = 0;
-
-                            nLoodIdx++;
-                        }
-
-                        stringBuilder.Clear();
-
                         testData.TimeSensitiveSetMVFeed = null;
+                        nLoodIdx++;
 
                         break;
                     }

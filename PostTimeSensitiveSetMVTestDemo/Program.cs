@@ -1,6 +1,7 @@
 ﻿using ArbinCTI.Core;
 using ArbinCTI.Core.Control;
 using ArbinCTI.Core.Inteface;
+using PostTimeSensitiveSetMVTestDemo;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -132,6 +133,18 @@ namespace PostTimeSensitiveSetMVDemo
                 }
             }
         }
+
+        public static void ClearMemory()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                DllImportUtility.SetProcessWorkingSetSize(Process.GetCurrentProcess().Handle, -1, -1);
+            }
+        }
+
+
         static void PostTimeSensitiveSetMV()
         {
             while (true)
@@ -185,6 +198,8 @@ namespace PostTimeSensitiveSetMVDemo
                 {
                     Console.WriteLine($"ID: {ID}");
                     nHour = nCurrentHour;
+
+                    ClearMemory();
                 }
 
                 Thread.Sleep(1);
@@ -193,7 +208,6 @@ namespace PostTimeSensitiveSetMVDemo
 
                 ctrl.PostTimeSensitiveSetMV(client, args);
 
-                args.Channels.Clear();
 
                 while (true)
                 {
@@ -205,6 +219,8 @@ namespace PostTimeSensitiveSetMVDemo
                             testData.TimeSensitiveSetMVFeed = null;
                             break;
                         }
+
+                        args.Channels.Clear();
 
                         nLoodIdx++;
                         ID = nLoodIdx + 1;
